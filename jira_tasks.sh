@@ -80,7 +80,7 @@ do
             info "Found commit: ${HASH} and Jira Tiket ID: ${ID}"
             # Найден новый номер задачи Jira, сохраняем его
             id_array+=(${ID})
-            # меняем статус задачи в Jira на "81" (TESTED)
+            # меняем статус задачи в Jira на TESTED
             result=`curl -u ${JIRA_USER}:${JIRA_PASSWORD} -X POST --data '{"transition":{"id":"${JIRA_TASK_STATUS_ID[$SIG]}"}}' -H "Content-Type: application/json" https://jira.aigen.ru/rest/api/latest/issue/${ID}/transitions?.fields`
             if [ ! -n "$result" ]
             then
