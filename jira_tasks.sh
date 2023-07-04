@@ -50,7 +50,7 @@ function check_requirements {
 }
 
 function switch_task_status() {
-  result=$(curl -sS -u ${JIRA_USER}:${JIRA_PASSWORD} -XPOST -H 'Content-Type: application/json' -d '{"transition":{"id":'${1}'}}' https://jira.aigen.ru/rest/api/latest/issue/${2}/transitions?.fields)
+  result=$(curl -sS -u ${JIRA_USER}:${JIRA_PASSWORD} -XPOST -H 'Content-Type: application/json' -d '{"transition":{"id":'${1}'}}' https://jira.aigen.ru/rest/api/latest/issue/${2}/transitions?.fields) || { info "Error: Failed to switch task ${task}"; exit 1; }
   if [[ $DEBUG ]]; then
     info "DEBUG: switch_task_status: ID ${1} - TASK ${2}"
     [[ ! -z ${result} ]] && info "DEBUG: switch_task_status: Web request result: ${result}"
@@ -62,14 +62,11 @@ function check_task() {
   task=${1}
   [[ $DEBUG ]] && info "DEBUG: check_task: Checking Jira task ${task}"
   # Get task information
-  result=$(curl -sS -u ${JIRA_USER}:${JIRA_PASSWORD} -XGET -H 'Content-Type: application/json' https://jira.aigen.ru/rest/api/2/issue/$task/transitions)
-  if [[ "$result" =~ .*"error".* ]]; then
-    info "Jira task ${task} is not found"
-  else
+  result=$(curl -sS -u ${JIRA_USER}:${JIRA_PASSWORD} -XGET -H 'Content-Type: application/json' https://jira.aigen.ru/rest/api/2/issue/$task/transitions) || { info "Error: Failed to check task information for ${task}"; exit 1; }
     i=0
     echo $result | jq '.transitions[] | .id' | while read id; do
       [[ $DEBUG ]] && info "DEBUG: check_task: Task status ID: ${id}"
-      name=$(echo $result | jq '.transitions['${i}'] | .name')
+      name=$(echo "$result" | jq '.transitions['${i}'] | .name')
       ((i = i + 1))
       [[ $DEBUG ]] && info "DEBUG: check_task: Task status NAME: ${name}"
       # If task status name contains "esting" then we can switch it to Testing
@@ -77,7 +74,6 @@ function check_task() {
         switch_task_status $id $task
       fi
     done
-  fi
 }
 
 function main {
